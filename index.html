@@ -8,27 +8,36 @@
   </head>
   <body>
     <header class="app-header">
-      <h1>GB Dot Converter</h1>
-      <p>写真/イラストをGB Studio互換の緑4色へ変換 + 最終PNG検証</p>
+      <div class="header-top-row">
+        <h1>GB Dot Converter</h1>
+        <label class="lang-switcher" for="languageSelect">
+          <span data-i18n="language">言語</span>
+          <select id="languageSelect" aria-label="Language">
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      </div>
+      <p data-i18n="headerSubtitle">写真/イラストをGB Studio互換の緑4色へ変換 + 最終PNG検証</p>
     </header>
 
-    <nav class="tab-nav" aria-label="機能タブ">
-      <button id="tabConvertBtn" class="tab-btn active" data-tab="convert">変換</button>
-      <button id="tabValidateBtn" class="tab-btn" data-tab="validate">最終PNG検証</button>
+    <nav class="tab-nav" aria-label="機能タブ" data-i18n-aria-label="tabNavAriaLabel">
+      <button id="tabConvertBtn" class="tab-btn active" data-tab="convert" data-i18n="tabConvert">変換</button>
+      <button id="tabValidateBtn" class="tab-btn" data-tab="validate" data-i18n="tabValidate">最終PNG検証</button>
     </nav>
 
     <section id="convertTab" class="tab-panel active">
       <main class="layout">
         <section class="preview-panel card">
-          <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="画像をアップロード">
+          <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="画像をアップロード" data-i18n-aria-label="uploadImageAria">
             <input id="fileInput" type="file" accept="image/*" hidden />
-            <p><strong>画像をドラッグ&ドロップ</strong> またはタップして選択</p>
+            <p><strong data-i18n="dropImageStrong">画像をドラッグ&ドロップ</strong> <span data-i18n="orTapSelect">またはタップして選択</span></p>
             <small>PNG / JPG / WebP</small>
           </div>
 
           <div class="toolbar">
-            <button id="showBeforeBtn" class="active">変換前</button>
-            <button id="showAfterBtn">変換後</button>
+            <button id="showBeforeBtn" class="active" data-i18n="showBefore">変換前</button>
+            <button id="showAfterBtn" data-i18n="showAfter">変換後</button>
             <span id="statusText" aria-live="polite"></span>
           </div>
 
@@ -36,89 +45,89 @@
         </section>
 
         <section class="controls-panel card">
-          <h2>設定</h2>
+          <h2 data-i18n="settings">設定</h2>
 
           <details open>
-            <summary>トリミング/リサイズ</summary>
+            <summary data-i18n="cropResize">トリミング/リサイズ</summary>
             <div class="control-grid">
-              <label>トリミング比率
+              <label><span data-i18n="cropAspect">トリミング比率</span>
                 <select id="cropPreset">
-                  <option value="free">自由</option>
+                  <option value="free" data-i18n="free">自由</option>
                   <option value="1:1">1:1</option>
                   <option value="4:3">4:3</option>
-                  <option value="160:144">160x144枠</option>
+                  <option value="160:144" data-i18n="frame160x144">160x144枠</option>
                 </select>
               </label>
-              <label>ズーム <span id="zoomValue">1.00</span>
+              <label><span data-i18n="zoom">ズーム</span> <span id="zoomValue">1.00</span>
                 <input id="zoom" type="range" min="1" max="4" value="1" step="0.01" />
               </label>
-              <label>パンX <span id="panXValue">0</span>
+              <label><span data-i18n="panX">パンX</span> <span id="panXValue">0</span>
                 <input id="panX" type="range" min="-100" max="100" value="0" step="1" />
               </label>
-              <label>パンY <span id="panYValue">0</span>
+              <label><span data-i18n="panY">パンY</span> <span id="panYValue">0</span>
                 <input id="panY" type="range" min="-100" max="100" value="0" step="1" />
               </label>
-              <label>出力サイズプリセット
+              <label><span data-i18n="sizePreset">出力サイズプリセット</span>
                 <select id="sizePreset">
                   <option value="160x144">160x144 (GB)</option>
                   <option value="128x112">128x112</option>
                   <option value="240x216">240x216</option>
-                  <option value="custom">任意</option>
+                  <option value="custom" data-i18n="custom">任意</option>
                 </select>
               </label>
-              <label>任意指定モード
+              <label><span data-i18n="customMode">任意指定モード</span>
                 <select id="customMode">
-                  <option value="width">幅固定（縦横比維持）</option>
-                  <option value="height">高さ固定（縦横比維持）</option>
+                  <option value="width" data-i18n="fixedWidth">幅固定（縦横比維持）</option>
+                  <option value="height" data-i18n="fixedHeight">高さ固定（縦横比維持）</option>
                 </select>
               </label>
-              <label>任意 幅
+              <label><span data-i18n="customWidth">任意 幅</span>
                 <input id="customWidth" type="number" min="16" max="512" value="160" />
               </label>
-              <label>任意 高さ
+              <label><span data-i18n="customHeight">任意 高さ</span>
                 <input id="customHeight" type="number" min="16" max="512" value="144" />
               </label>
             </div>
           </details>
 
           <details open>
-            <summary>写真向け事前補正</summary>
+            <summary data-i18n="photoCorrection">写真向け事前補正</summary>
             <div class="control-grid">
-              <label>明るさ <span id="brightnessValue">0</span>
+              <label><span data-i18n="brightness">明るさ</span> <span id="brightnessValue">0</span>
                 <input id="brightness" type="range" min="-100" max="100" value="0" />
               </label>
-              <label>コントラスト <span id="contrastValue">0</span>
+              <label><span data-i18n="contrast">コントラスト</span> <span id="contrastValue">0</span>
                 <input id="contrast" type="range" min="-100" max="100" value="0" />
               </label>
-              <label>ガンマ <span id="gammaValue">1.00</span>
+              <label><span data-i18n="gamma">ガンマ</span> <span id="gammaValue">1.00</span>
                 <input id="gamma" type="range" min="0.5" max="2.2" value="1" step="0.01" />
               </label>
-              <label>ぼかし(px) <span id="blurValue">0.00</span>
+              <label><span data-i18n="blur">ぼかし(px)</span> <span id="blurValue">0.00</span>
                 <input id="blur" type="range" min="0" max="2" value="0" step="0.05" />
               </label>
             </div>
           </details>
 
           <details open>
-            <summary>減色 / ディザ</summary>
+            <summary data-i18n="quantizeDither">減色 / ディザ</summary>
             <div class="control-grid">
-              <label>ディザ
+              <label><span data-i18n="dither">ディザ</span>
                 <select id="ditherMode">
                   <option value="bayer" selected>Bayer 4x4</option>
                   <option value="off">OFF</option>
                   <option value="floyd">Floyd–Steinberg</option>
                 </select>
               </label>
-              <label>ディザ強度 <span id="ditherStrengthValue">50</span>
+              <label><span data-i18n="ditherStrength">ディザ強度</span> <span id="ditherStrengthValue">50</span>
                 <input id="ditherStrength" type="range" min="0" max="100" value="50" />
               </label>
             </div>
           </details>
 
           <details open>
-            <summary>PNG出力</summary>
+            <summary data-i18n="pngOutput">PNG出力</summary>
             <div class="control-grid">
-              <label>SNS拡大倍率
+              <label><span data-i18n="snsScale">SNS拡大倍率</span>
                 <select id="scalePreset">
                   <option value="2">2x</option>
                   <option value="3">3x</option>
@@ -128,8 +137,8 @@
                 </select>
               </label>
               <div class="button-row">
-                <button id="downloadRawBtn">GB Studio用PNG保存</button>
-                <button id="downloadScaledBtn">SNS向け拡大PNG保存</button>
+                <button id="downloadRawBtn" data-i18n="downloadRaw">GB Studio用PNG保存</button>
+                <button id="downloadScaledBtn" data-i18n="downloadScaled">SNS向け拡大PNG保存</button>
               </div>
             </div>
           </details>
@@ -140,50 +149,50 @@
     <section id="validateTab" class="tab-panel">
       <main class="layout">
         <section class="card">
-          <h2>最終PNG検証</h2>
-          <div id="validateDropZone" class="drop-zone" role="button" tabindex="0" aria-label="最終PNGをアップロード">
+          <h2 data-i18n="validateTitle">最終PNG検証</h2>
+          <div id="validateDropZone" class="drop-zone" role="button" tabindex="0" aria-label="最終PNGをアップロード" data-i18n-aria-label="uploadFinalPngAria">
             <input id="validateFileInput" type="file" accept="image/png,image/*" hidden />
-            <p><strong>最終書き出しPNGをドラッグ&ドロップ</strong> またはタップして選択</p>
-            <small>用途: GB Studio向け事前検証（色数・タイル数）</small>
+            <p><strong data-i18n="dropFinalStrong">最終書き出しPNGをドラッグ&ドロップ</strong> <span data-i18n="orTapSelect">またはタップして選択</span></p>
+            <small data-i18n="validatePurpose">用途: GB Studio向け事前検証（色数・タイル数）</small>
           </div>
 
           <div class="control-grid">
-            <label>Tile limit
+            <label><span data-i18n="tileLimit">Tile limit</span>
               <input id="tileLimit" type="number" min="1" max="4096" value="192" />
             </label>
-            <label>8の倍数処理
+            <label><span data-i18n="multipleHandling">8の倍数処理</span>
               <select id="multipleHandling">
-                <option value="pad" selected>Pad</option>
-                <option value="crop">Crop</option>
+                <option value="pad" selected data-i18n="pad">Pad</option>
+                <option value="crop" data-i18n="crop">Crop</option>
               </select>
             </label>
-            <label>透明ピクセル処理
+            <label><span data-i18n="transparencyHandling">透明ピクセル処理</span>
               <select id="transparencyHandling">
-                <option value="replace" selected>Replace with background</option>
-                <option value="color0">Treat as color0</option>
+                <option value="replace" selected data-i18n="replaceWithBackground">Replace with background</option>
+                <option value="color0" data-i18n="treatAsColor0">Treat as color0</option>
               </select>
             </label>
           </div>
 
           <div id="validateSummary" class="result-card">
-            <h3>結果サマリー</h3>
-            <p>未解析</p>
+            <h3 data-i18n="resultSummary">結果サマリー</h3>
+            <p data-i18n="notAnalyzed">未解析</p>
           </div>
 
           <div class="button-row">
-            <button id="downloadTilesetBtn">Download Tileset PNG</button>
-            <button id="downloadReportBtn">Download Report JSON</button>
+            <button id="downloadTilesetBtn" data-i18n="downloadTileset">Download Tileset PNG</button>
+            <button id="downloadReportBtn" data-i18n="downloadReport">Download Report JSON</button>
           </div>
         </section>
 
         <section class="card">
-          <h3>プレビュー / オーバーレイ</h3>
+          <h3 data-i18n="previewOverlay">プレビュー / オーバーレイ</h3>
           <div class="preview-stack">
             <canvas id="validatePreviewCanvas" width="320" height="288"></canvas>
             <canvas id="validateOverlayCanvas" width="320" height="288"></canvas>
           </div>
 
-          <h3>ユニークタイル一覧</h3>
+          <h3 data-i18n="uniqueTileList">ユニークタイル一覧</h3>
           <div id="tileList" class="tile-grid" aria-live="polite"></div>
         </section>
       </main>
