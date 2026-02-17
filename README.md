@@ -1,82 +1,127 @@
 # GB Dot Converter
 
-HTML5で動く、画像をGB Studio互換4色固定パレットに変換する静的Webアプリです。
+A static web app that runs in your browser and converts images into the 4-color Game Boy style palette for GB Studio.
+ブラウザで動く静的Webアプリで、画像をGB Studio向けの4色ゲームボーイ風パレットに変換できます。
 
-## セットアップ
+---
+
+## English Guide (Beginner Friendly)
+
+### 1) Quick start
 
 ```bash
 npm install
 npm run dev
 ```
 
-> 代替として `python -m http.server` でも静的配信できます（ただしVite開発サーバー推奨）。
+Open the URL shown by Vite (usually `http://localhost:5173`).
 
-## 機能1: 変換（Converter）
+### 2) Change language (EN / JA)
 
-- 画像アップロード（D&D + ファイル選択）
-- 中央トリミング + ズーム/パン
-- 出力サイズプリセット（160x144 / 128x112 / 240x216 / custom）
-- 明るさ/コントラスト/ガンマ/ぼかし
-- ディザ（OFF / Bayer 4x4 / Floyd–Steinberg）
-- 4色固定パレット化（`#071821 #306850 #86c06c #e0f8cf`）
-- 原寸PNG / 最近傍拡大PNG（2/3/4/6/8）
+Use the language selector in the header:
+- `日本語`
+- `English`
 
-## 機能2: 最終PNG検証（Tile & Palette Validator）
+Your choice is saved in the browser automatically.
 
-「変換結果」ではなく、ドットアプリ等で手直し・手打ちした**最終書き出しPNG**を検証するためのタブです。
+### 3) Convert an image (Convert tab)
 
-### 何を検証するか
+1. Drag and drop an image, or click the upload area.
+2. (Optional) Adjust settings:
+   - Crop / Resize
+   - Brightness / Contrast / Gamma / Blur
+   - Dither mode and strength
+3. Check preview using **Before / After**.
+4. Save output:
+   - **Save PNG for GB Studio** (raw size)
+   - **Save Upscaled PNG for SNS** (2x/3x/4x/6x/8x)
 
-1. **Palette Validator**
-   - 使用色数 `Colors used: N / 4` を表示
-   - `N > 4` の場合 `PALETTE_NG`
-2. **Tile Validator**
-   - 8x8タイルへ分割し、完全一致でユニークタイル数を集計
-   - `Unique tiles: X / limit` を表示（デフォルト limit=192）
-   - 超過時 `TILES_OVER`
-3. **サイズ正規化**
-   - 8の倍数でない入力サイズを、設定に応じて `Pad` または `Crop`
-4. **透明処理**
-   - `Replace with background` / `Treat as color0`（現状はどちらも背景色置換）
+### 4) Validate final PNG (Final PNG Validation tab)
 
-### 可視化
+Use this for the **final PNG** you edited in pixel tools.
 
-- ヒートマップ（freq=1を強調、頻出は薄く）
-- 8pxグリッドオーバーレイ
-- ユニークタイル一覧（freq低い順）
-- 一覧クリックで該当タイルの出現箇所をハイライト
+1. Upload PNG.
+2. Check:
+   - **Colors used** (should be 4 or less)
+   - **Unique tiles / limit** (default limit: 192)
+   - Source/analyzed size (normalized to multiples of 8)
+3. Optional downloads:
+   - **Download Tileset PNG**
+   - **Download Report JSON**
 
-### ダウンロード
+### 5) Troubleshooting
 
-- **Download Tileset PNG**
-  - 16列固定、8x8タイルを並べたタイルセット
-- **Download Report JSON**
-  - `tile-validator-v1` 形式で主要指標を保存
-  - `tileKeyByPos` 等の巨大データは含めない
+- If image load fails, try PNG/JPG/WebP and smaller file sizes.
+- Very large images are downscaled internally.
+- If output is too noisy, reduce dither strength or use `OFF`.
 
-## 動作確認手順（段階的）
+---
 
-### Phase 1: 変換MVP
-- 画像を読み込む
-- サイズを `160x144` にして変換表示
-- `gb4_160x144.png` / `gb4_160x144_x4.png` を保存
+## 日本語ガイド（初心者向け）
 
-### Phase 2: 変換追加機能
-- ディザを `Floyd–Steinberg` に変更して見た目が変わる
-- ディザ強度を `0` にするとOFF相当
-- 長辺4096px超画像で縮小案内が出る
+### 1) はじめ方
 
-### Phase 3: 最終PNG検証
-- 検証タブにPNGをアップロード
-- `src` と `analyzed` サイズ（8の倍数化後）を確認
-- `Colors used` が4以下か確認
-- `Unique tiles` がlimit(192)以下か確認
-- タイル一覧クリックでハイライト表示を確認
-- Tileset PNG / Report JSON を保存して中身を確認
+```bash
+npm install
+npm run dev
+```
 
-## カスタマイズポイント
+Viteが表示したURL（通常 `http://localhost:5173`）をブラウザで開いてください。
 
-- 固定パレット: `main.js` の `GB_PALETTE_HEX`
-- 変換サイズプリセット: `index.html` の `#sizePreset`
-- 検証ロジック: `tileAnalyzer.js`
-- スタイル: `style.css`
+### 2) 言語切り替え（英語 / 日本語）
+
+ヘッダーの言語セレクターで切り替えます。
+- `日本語`
+- `English`
+
+選択した言語はブラウザに自動保存されます。
+
+### 3) 画像を変換する（変換タブ）
+
+1. 画像をドラッグ&ドロップ、またはクリックで選択。
+2. 必要に応じて設定を調整：
+   - トリミング / リサイズ
+   - 明るさ / コントラスト / ガンマ / ぼかし
+   - ディザ方式 / 強度
+3. **変換前 / 変換後** で見た目を確認。
+4. 保存：
+   - **GB Studio用PNG保存**（原寸）
+   - **SNS向け拡大PNG保存**（2x/3x/4x/6x/8x）
+
+### 4) 最終PNGを検証する（最終PNG検証タブ）
+
+ドットエディタで仕上げた **最終書き出しPNG** を確認する用途です。
+
+1. PNGをアップロード。
+2. 次を確認：
+   - **Colors used**（4色以下か）
+   - **Unique tiles / limit**（デフォルト上限 192）
+   - Source / Analyzed サイズ（8の倍数に正規化）
+3. 必要なら保存：
+   - **タイルセットPNG保存**
+   - **レポートJSON保存**
+
+### 5) うまくいかないとき
+
+- 読み込み失敗時は PNG/JPG/WebP を試し、画像サイズを小さくしてください。
+- 大きすぎる画像は内部で自動縮小されます。
+- ノイズが気になる場合はディザ強度を下げるか `OFF` にしてください。
+
+---
+
+## Main Features
+
+- Image upload (drag & drop + file picker)
+- Center crop + zoom/pan
+- Output size presets (`160x144`, `128x112`, `240x216`, custom)
+- Brightness / contrast / gamma / blur
+- Dither (`OFF`, `Bayer 4x4`, `Floyd–Steinberg`)
+- Fixed GB palette (`#071821 #306850 #86c06c #e0f8cf`)
+- Final PNG validator (palette + tile count)
+
+## Customization points
+
+- Fixed palette: `main.js` (`GB_PALETTE_HEX`)
+- Size presets: `index.html` (`#sizePreset`)
+- Validator logic: `tileAnalyzer.js`
+- Styles: `style.css`
