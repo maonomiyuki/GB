@@ -18,6 +18,31 @@ body {
 .app-header h1 { margin: 0; }
 .app-header p { margin-top: .25rem; color: var(--muted); }
 
+.header-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .9rem;
+  color: var(--muted);
+}
+
+.lang-switcher select {
+  width: auto;
+  background: #1e352b;
+  color: var(--text);
+  border: 1px solid #5f8b75;
+  border-radius: 6px;
+  padding: .25rem .4rem;
+}
+
 .tab-nav {
   display: flex;
   gap: .5rem;

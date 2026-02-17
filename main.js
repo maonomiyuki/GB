@@ -5,6 +5,163 @@ const GB_PALETTE = GB_PALETTE_HEX.map(hexToRgb);
 const MAX_INPUT_EDGE = 4096;
 const DEBOUNCE_MS = 150;
 
+const I18N = {
+  ja: {
+    pageTitle: "GB Dot Converter",
+    language: "言語",
+    headerSubtitle: "写真/イラストをGB Studio互換の緑4色へ変換 + 最終PNG検証",
+    tabNavAriaLabel: "機能タブ",
+    tabConvert: "変換",
+    tabValidate: "最終PNG検証",
+    uploadImageAria: "画像をアップロード",
+    dropImageStrong: "画像をドラッグ&ドロップ",
+    dropFinalStrong: "最終書き出しPNGをドラッグ&ドロップ",
+    orTapSelect: "またはタップして選択",
+    showBefore: "変換前",
+    showAfter: "変換後",
+    settings: "設定",
+    cropResize: "トリミング/リサイズ",
+    cropAspect: "トリミング比率",
+    free: "自由",
+    frame160x144: "160x144枠",
+    zoom: "ズーム",
+    panX: "パンX",
+    panY: "パンY",
+    sizePreset: "出力サイズプリセット",
+    custom: "任意",
+    customMode: "任意指定モード",
+    fixedWidth: "幅固定（縦横比維持）",
+    fixedHeight: "高さ固定（縦横比維持）",
+    customWidth: "任意 幅",
+    customHeight: "任意 高さ",
+    photoCorrection: "写真向け事前補正",
+    brightness: "明るさ",
+    contrast: "コントラスト",
+    gamma: "ガンマ",
+    blur: "ぼかし(px)",
+    quantizeDither: "減色 / ディザ",
+    dither: "ディザ",
+    ditherStrength: "ディザ強度",
+    pngOutput: "PNG出力",
+    snsScale: "SNS拡大倍率",
+    downloadRaw: "GB Studio用PNG保存",
+    downloadScaled: "SNS向け拡大PNG保存",
+    validateTitle: "最終PNG検証",
+    uploadFinalPngAria: "最終PNGをアップロード",
+    validatePurpose: "用途: GB Studio向け事前検証（色数・タイル数）",
+    tileLimit: "タイル上限",
+    multipleHandling: "8の倍数処理",
+    pad: "Pad",
+    crop: "Crop",
+    transparencyHandling: "透明ピクセル処理",
+    replaceWithBackground: "背景色で置換",
+    treatAsColor0: "color0として扱う",
+    resultSummary: "結果サマリー",
+    notAnalyzed: "未解析",
+    downloadTileset: "タイルセットPNG保存",
+    downloadReport: "レポートJSON保存",
+    previewOverlay: "プレビュー / オーバーレイ",
+    uniqueTileList: "ユニークタイル一覧",
+    statusUnsupported: "非対応形式です。画像ファイルを選択してください。",
+    statusLoading: "読み込み中...",
+    statusLoadFailed: "読み込みに失敗しました。別の画像を試してください。",
+    statusDownscaled: "画像が大きすぎるため内部で縮小します。",
+    statusProcessing: "変換中...",
+    statusDone: "変換完了",
+    statusProcessFailed: "処理に失敗しました。画像サイズを下げて再試行してください。",
+    statusNeedConvert: "先に画像を変換してください",
+    placeholder: "画像をアップロードしてください",
+    analyzeFailed: "解析失敗",
+    summaryStatus: "Status",
+    summarySource: "Source",
+    summaryAnalyzed: "Analyzed",
+    summaryTotalTiles: "Total tiles",
+    summaryColorsUsed: "Colors used",
+    summaryUniqueTiles: "Unique tiles",
+    summaryRareUniqueTiles: "Rare unique tiles",
+    paletteNg: "Palette NG",
+    tilesOver: "Tiles OVER",
+    freq: "freq",
+  },
+  en: {
+    pageTitle: "GB Dot Converter",
+    language: "Language",
+    headerSubtitle: "Convert photos/illustrations into GB Studio-compatible 4 green colors + final PNG validation",
+    tabNavAriaLabel: "Feature tabs",
+    tabConvert: "Convert",
+    tabValidate: "Final PNG Validation",
+    uploadImageAria: "Upload image",
+    dropImageStrong: "Drag & drop an image",
+    dropFinalStrong: "Drag & drop final exported PNG",
+    orTapSelect: "or tap to choose",
+    showBefore: "Before",
+    showAfter: "After",
+    settings: "Settings",
+    cropResize: "Crop / Resize",
+    cropAspect: "Crop aspect",
+    free: "Free",
+    frame160x144: "160x144 frame",
+    zoom: "Zoom",
+    panX: "Pan X",
+    panY: "Pan Y",
+    sizePreset: "Output size preset",
+    custom: "Custom",
+    customMode: "Custom mode",
+    fixedWidth: "Fix width (keep aspect)",
+    fixedHeight: "Fix height (keep aspect)",
+    customWidth: "Custom width",
+    customHeight: "Custom height",
+    photoCorrection: "Photo pre-correction",
+    brightness: "Brightness",
+    contrast: "Contrast",
+    gamma: "Gamma",
+    blur: "Blur (px)",
+    quantizeDither: "Quantize / Dither",
+    dither: "Dither",
+    ditherStrength: "Dither strength",
+    pngOutput: "PNG Output",
+    snsScale: "SNS upscale",
+    downloadRaw: "Save PNG for GB Studio",
+    downloadScaled: "Save Upscaled PNG for SNS",
+    validateTitle: "Final PNG Validation",
+    uploadFinalPngAria: "Upload final PNG",
+    validatePurpose: "Usage: Pre-check for GB Studio (colors/tile count)",
+    tileLimit: "Tile limit",
+    multipleHandling: "Multiple-of-8 handling",
+    pad: "Pad",
+    crop: "Crop",
+    transparencyHandling: "Transparent pixel handling",
+    replaceWithBackground: "Replace with background",
+    treatAsColor0: "Treat as color0",
+    resultSummary: "Result Summary",
+    notAnalyzed: "Not analyzed",
+    downloadTileset: "Download Tileset PNG",
+    downloadReport: "Download Report JSON",
+    previewOverlay: "Preview / Overlay",
+    uniqueTileList: "Unique Tile List",
+    statusUnsupported: "Unsupported format. Please choose an image file.",
+    statusLoading: "Loading...",
+    statusLoadFailed: "Failed to load image. Please try another file.",
+    statusDownscaled: "Image is too large and has been downscaled internally.",
+    statusProcessing: "Processing...",
+    statusDone: "Conversion complete",
+    statusProcessFailed: "Processing failed. Please reduce image size and retry.",
+    statusNeedConvert: "Please convert an image first.",
+    placeholder: "Please upload an image",
+    analyzeFailed: "Analysis failed",
+    summaryStatus: "Status",
+    summarySource: "Source",
+    summaryAnalyzed: "Analyzed",
+    summaryTotalTiles: "Total tiles",
+    summaryColorsUsed: "Colors used",
+    summaryUniqueTiles: "Unique tiles",
+    summaryRareUniqueTiles: "Rare unique tiles",
+    paletteNg: "Palette NG",
+    tilesOver: "Tiles OVER",
+    freq: "freq",
+  },
+};
+
 const state = {
   imageBitmap: null,
   sourceCanvas: document.createElement("canvas"),
@@ -12,6 +169,8 @@ const state = {
   previewMode: "after",
   processing: false,
   pending: false,
+  language: localStorage.getItem("gbdc_lang") || "ja",
+  lastStatusKey: "",
   validator: {
     file: null,
     normalized: null,
@@ -23,6 +182,7 @@ const state = {
 const el = {
   tabConvertBtn: document.getElementById("tabConvertBtn"),
   tabValidateBtn: document.getElementById("tabValidateBtn"),
+  languageSelect: document.getElementById("languageSelect"),
   convertTab: document.getElementById("convertTab"),
   validateTab: document.getElementById("validateTab"),
   dropZone: document.getElementById("dropZone"),
@@ -83,7 +243,53 @@ function init() {
   bindUploadHandlers();
   bindControls();
   bindValidatorUI();
+  bindI18n();
+  setLanguage(state.language);
   renderPlaceHolder();
+}
+
+function t(key) {
+  return I18N[state.language]?.[key] ?? I18N.ja[key] ?? key;
+}
+
+function bindI18n() {
+  el.languageSelect.value = state.language;
+  el.languageSelect.addEventListener("change", (ev) => setLanguage(ev.target.value));
+}
+
+function setLanguage(lang) {
+  state.language = lang === "en" ? "en" : "ja";
+  localStorage.setItem("gbdc_lang", state.language);
+  document.documentElement.lang = state.language;
+  document.title = t("pageTitle");
+  applyI18nTexts();
+  updateStatusByKey(state.lastStatusKey || "");
+  if (!state.imageBitmap) renderPlaceHolder();
+  if (state.validator.analysis) renderValidatorSummary();
+  if (!state.validator.analysis) {
+    const h3 = el.validateSummary.querySelector("h3");
+    const p = el.validateSummary.querySelector("p");
+    if (h3) h3.textContent = t("resultSummary");
+    if (p) p.textContent = t("notAnalyzed");
+  }
+  renderTileList();
+}
+
+function applyI18nTexts() {
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const key = node.dataset.i18n;
+    node.textContent = t(key);
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+    const key = node.dataset.i18nAriaLabel;
+    node.setAttribute("aria-label", t(key));
+  });
+}
+
+function updateStatusByKey(key, isError = false, suffix = "") {
+  if (!key) return;
+  state.lastStatusKey = key;
+  setStatus(`${t(key)}${suffix}`, isError);
 }
 
 function bindTabs() {
@@ -165,7 +371,7 @@ async function handleValidateUpload(file) {
     renderTileList();
   } catch (error) {
     console.error(error);
-    el.validateSummary.innerHTML = `<h3>結果サマリー</h3><p>解析失敗: ${file.name}</p>`;
+    el.validateSummary.innerHTML = `<h3>${t("resultSummary")}</h3><p>${t("analyzeFailed")}: ${file.name}</p>`;
   }
 }
 
@@ -242,14 +448,14 @@ function renderValidatorSummary() {
 
   const rareRatio = analysis.uniqueTiles ? ((analysis.rareUniqueTiles / analysis.uniqueTiles) * 100).toFixed(1) : "0.0";
   el.validateSummary.innerHTML = `
-    <h3>結果サマリー</h3>
-    <p>Status: <strong>${analysis.status}</strong></p>
-    <p>Source: ${normalized.srcWidth} x ${normalized.srcHeight}</p>
-    <p>Analyzed: ${analysis.analyzedWidth} x ${analysis.analyzedHeight}</p>
-    <p>Total tiles: ${analysis.totalTiles}</p>
-    <p>Colors used: ${analysis.uniqueColors} / 4 ${analysis.paletteOk ? "(OK)" : "(Palette NG)"}</p>
-    <p>Unique tiles: ${analysis.uniqueTiles} / ${analysis.tileLimit} ${analysis.tilesOk ? "(OK)" : "(Tiles OVER)"}</p>
-    <p>Rare unique tiles: ${analysis.rareUniqueTiles} (${rareRatio}%)</p>
+    <h3>${t("resultSummary")}</h3>
+    <p>${t("summaryStatus")}: <strong>${analysis.status}</strong></p>
+    <p>${t("summarySource")}: ${normalized.srcWidth} x ${normalized.srcHeight}</p>
+    <p>${t("summaryAnalyzed")}: ${analysis.analyzedWidth} x ${analysis.analyzedHeight}</p>
+    <p>${t("summaryTotalTiles")}: ${analysis.totalTiles}</p>
+    <p>${t("summaryColorsUsed")}: ${analysis.uniqueColors} / 4 ${analysis.paletteOk ? "(OK)" : `(${t("paletteNg")})`}</p>
+    <p>${t("summaryUniqueTiles")}: ${analysis.uniqueTiles} / ${analysis.tileLimit} ${analysis.tilesOk ? "(OK)" : `(${t("tilesOver")})`}</p>
+    <p>${t("summaryRareUniqueTiles")}: ${analysis.rareUniqueTiles} (${rareRatio}%)</p>
   `;
 }
 
@@ -270,7 +476,7 @@ function renderTileList() {
     c.getContext("2d").putImageData(imageDataFromTileKey(key, 8), 0, 0);
 
     const info = document.createElement("small");
-    info.textContent = `freq:${freq}`;
+    info.textContent = `${t("freq")}:${freq}`;
     item.append(c, info);
     item.addEventListener("click", () => {
       state.validator.selectedTileKey = key;
@@ -387,12 +593,12 @@ function onActionButton(ev) {
 
 async function loadFile(file) {
   if (!file.type.startsWith("image/")) {
-    setStatus("非対応形式です。画像ファイルを選択してください。", true);
+    updateStatusByKey("statusUnsupported", true);
     return;
   }
 
   try {
-    setStatus("読み込み中...");
+    updateStatusByKey("statusLoading");
     let bitmap;
     try {
       bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -405,7 +611,7 @@ async function loadFile(file) {
     processImagePipeline();
   } catch (error) {
     console.error(error);
-    setStatus("読み込みに失敗しました。別の画像を試してください。", true);
+    updateStatusByKey("statusLoadFailed", true);
   }
 }
 
@@ -417,7 +623,7 @@ function downscaleIfNeeded(bitmap, maxEdge) {
   const w = Math.max(1, Math.round(bitmap.width * ratio));
   const h = Math.max(1, Math.round(bitmap.height * ratio));
 
-  setStatus("画像が大きすぎるため内部で縮小します。");
+  updateStatusByKey("statusDownscaled");
   const c = document.createElement("canvas");
   c.width = w;
   c.height = h;
@@ -434,7 +640,7 @@ function processImagePipeline() {
   }
 
   state.processing = true;
-  setStatus("変換中...");
+  updateStatusByKey("statusProcessing");
 
   requestAnimationFrame(() => {
     try {
@@ -473,11 +679,11 @@ function processImagePipeline() {
       octx.imageSmoothingEnabled = false;
       octx.drawImage(workCanvas, 0, 0);
 
-      setStatus(`変換完了 ${outW}x${outH}`);
+      updateStatusByKey("statusDone", false, ` ${outW}x${outH}`);
       drawPreview();
     } catch (error) {
       console.error(error);
-      setStatus("処理に失敗しました。画像サイズを下げて再試行してください。", true);
+      updateStatusByKey("statusProcessFailed", true);
     } finally {
       state.processing = false;
       if (state.pending) {
@@ -659,13 +865,13 @@ function makeBeforePreviewCanvas() {
 }
 
 function downloadRaw() {
-  if (!state.outputCanvas.width) return setStatus("先に画像を変換してください", true);
+  if (!state.outputCanvas.width) return updateStatusByKey("statusNeedConvert", true);
   const name = `gb4_${state.outputCanvas.width}x${state.outputCanvas.height}.png`;
   state.outputCanvas.toBlob((blob) => downloadBlob(blob, name), "image/png");
 }
 
 function downloadScaled() {
-  if (!state.outputCanvas.width) return setStatus("先に画像を変換してください", true);
+  if (!state.outputCanvas.width) return updateStatusByKey("statusNeedConvert", true);
   const scale = Number(el.scalePreset.value);
   const c = document.createElement("canvas");
   c.width = state.outputCanvas.width * scale;
@@ -762,7 +968,7 @@ function renderPlaceHolder() {
   previewCtx.fillRect(0, 0, el.previewCanvas.width, el.previewCanvas.height);
   previewCtx.fillStyle = "#e0f8cf";
   previewCtx.font = "16px sans-serif";
-  previewCtx.fillText("画像をアップロードしてください", 42, 150);
+  previewCtx.fillText(t("placeholder"), 42, 150);
 }
 
 function setStatus(message, isError = false) {
