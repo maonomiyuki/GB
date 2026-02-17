@@ -1,3 +1,5 @@
+import { normalizeToTileGrid, analyzeTiles, buildTilesetPng, buildReportJson } from "./tileAnalyzer.js";
+
 const GB_PALETTE_HEX = ["#071821", "#306850", "#86c06c", "#e0f8cf"];
 const GB_PALETTE = GB_PALETTE_HEX.map(hexToRgb);
 const MAX_INPUT_EDGE = 4096;
@@ -10,9 +12,19 @@ const state = {
   previewMode: "after",
   processing: false,
   pending: false,
+  validator: {
+    file: null,
+    normalized: null,
+    analysis: null,
+    selectedTileKey: null,
+  },
 };
 
 const el = {
+  tabConvertBtn: document.getElementById("tabConvertBtn"),
+  tabValidateBtn: document.getElementById("tabValidateBtn"),
+  convertTab: document.getElementById("convertTab"),
+  validateTab: document.getElementById("validateTab"),
   dropZone: document.getElementById("dropZone"),
   fileInput: document.getElementById("fileInput"),
   previewCanvas: document.getElementById("previewCanvas"),
@@ -44,17 +56,262 @@ const el = {
   scalePreset: document.getElementById("scalePreset"),
   downloadRawBtn: document.getElementById("downloadRawBtn"),
   downloadScaledBtn: document.getElementById("downloadScaledBtn"),
+  validateDropZone: document.getElementById("validateDropZone"),
+  validateFileInput: document.getElementById("validateFileInput"),
+  tileLimit: document.getElementById("tileLimit"),
+  multipleHandling: document.getElementById("multipleHandling"),
+  transparencyHandling: document.getElementById("transparencyHandling"),
+  validateSummary: document.getElementById("validateSummary"),
+  validatePreviewCanvas: document.getElementById("validatePreviewCanvas"),
+  validateOverlayCanvas: document.getElementById("validateOverlayCanvas"),
+  tileList: document.getElementById("tileList"),
+  downloadTilesetBtn: document.getElementById("downloadTilesetBtn"),
+  downloadReportBtn: document.getElementById("downloadReportBtn"),
 };
 
 const previewCtx = el.previewCanvas.getContext("2d", { willReadFrequently: true });
 previewCtx.imageSmoothingEnabled = false;
+const validatePreviewCtx = el.validatePreviewCanvas.getContext("2d", { willReadFrequently: true });
+const validateOverlayCtx = el.validateOverlayCanvas.getContext("2d", { willReadFrequently: true });
+validatePreviewCtx.imageSmoothingEnabled = false;
+validateOverlayCtx.imageSmoothingEnabled = false;
 
 init();
 
 function init() {
+  bindTabs();
   bindUploadHandlers();
   bindControls();
+  bindValidatorUI();
   renderPlaceHolder();
+}
+
+function bindTabs() {
+  el.tabConvertBtn.addEventListener("click", () => switchTab("convert"));
+  el.tabValidateBtn.addEventListener("click", () => switchTab("validate"));
+}
+
+function switchTab(tab) {
+  const isConvert = tab === "convert";
+  el.tabConvertBtn.classList.toggle("active", isConvert);
+  el.tabValidateBtn.classList.toggle("active", !isConvert);
+  el.convertTab.classList.toggle("active", isConvert);
+  el.validateTab.classList.toggle("active", !isConvert);
+}
+
+function bindValidatorUI() {
+  el.validateDropZone.addEventListener("click", () => el.validateFileInput.click());
+  el.validateDropZone.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" || ev.key === " ") el.validateFileInput.click();
+  });
+  el.validateFileInput.addEventListener("change", (ev) => {
+    const file = ev.target.files?.[0];
+    if (file) handleValidateUpload(file);
+  });
+
+  ["dragenter", "dragover"].forEach((type) => {
+    el.validateDropZone.addEventListener(type, (ev) => {
+      ev.preventDefault();
+      el.validateDropZone.classList.add("drag-over");
+    });
+  });
+  ["dragleave", "drop"].forEach((type) => {
+    el.validateDropZone.addEventListener(type, (ev) => {
+      ev.preventDefault();
+      el.validateDropZone.classList.remove("drag-over");
+    });
+  });
+  el.validateDropZone.addEventListener("drop", (ev) => {
+    const file = ev.dataTransfer?.files?.[0];
+    if (file) handleValidateUpload(file);
+  });
+
+  [el.tileLimit, el.multipleHandling, el.transparencyHandling].forEach((node) => {
+    node.addEventListener("input", () => {
+      if (state.validator.file) handleValidateUpload(state.validator.file);
+    });
+  });
+
+  el.downloadTilesetBtn.addEventListener("click", downloadTileset);
+  el.downloadReportBtn.addEventListener("click", downloadReportJsonFile);
+}
+
+async function handleValidateUpload(file) {
+  if (!file.type.startsWith("image/")) return;
+
+  state.validator.file = file;
+
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const normalized = normalizeToTileGrid(bitmap, {
+      tileSize: 8,
+      mode: el.multipleHandling.value,
+      backgroundRGBA: [224, 248, 207, 255],
+      transparencyMode: el.transparencyHandling.value,
+    });
+
+    const analysis = analyzeTiles(normalized.imageData, {
+      tileSize: 8,
+      tileLimit: Number(el.tileLimit.value) || 192,
+    });
+
+    state.validator.normalized = normalized;
+    state.validator.analysis = analysis;
+    state.validator.selectedTileKey = null;
+
+    drawValidatorPreview();
+    drawValidatorOverlay();
+    renderValidatorSummary();
+    renderTileList();
+  } catch (error) {
+    console.error(error);
+    el.validateSummary.innerHTML = `<h3>結果サマリー</h3><p>解析失敗: ${file.name}</p>`;
+  }
+}
+
+function drawValidatorPreview() {
+  const normalized = state.validator.normalized;
+  if (!normalized) return;
+  const src = normalized.canvas;
+  const displayScale = Math.max(1, Math.floor((el.validatePreviewCanvas.clientWidth || 320) / src.width));
+  const w = src.width * displayScale;
+  const h = src.height * displayScale;
+  el.validatePreviewCanvas.width = w;
+  el.validatePreviewCanvas.height = h;
+  el.validateOverlayCanvas.width = w;
+  el.validateOverlayCanvas.height = h;
+
+  validatePreviewCtx.clearRect(0, 0, w, h);
+  validatePreviewCtx.imageSmoothingEnabled = false;
+  validatePreviewCtx.drawImage(src, 0, 0, w, h);
+}
+
+function drawValidatorOverlay() {
+  const analysis = state.validator.analysis;
+  if (!analysis) return;
+  const w = el.validateOverlayCanvas.width;
+  const h = el.validateOverlayCanvas.height;
+  const tileW = w / analysis.tilesX;
+  const tileH = h / analysis.tilesY;
+  validateOverlayCtx.clearRect(0, 0, w, h);
+
+  let maxFreq = 1;
+  Object.values(analysis.freqByKey).forEach((v) => { maxFreq = Math.max(maxFreq, v); });
+
+  for (let i = 0; i < analysis.tileKeyByPos.length; i++) {
+    const key = analysis.tileKeyByPos[i];
+    const freq = analysis.freqByKey[key];
+    const strength = 1 - Math.log(freq + 1) / Math.log(maxFreq + 1);
+    const x = (i % analysis.tilesX) * tileW;
+    const y = Math.floor(i / analysis.tilesX) * tileH;
+    validateOverlayCtx.fillStyle = `rgba(255, 80, 80, ${0.45 * strength})`;
+    validateOverlayCtx.fillRect(x, y, tileW, tileH);
+  }
+
+  validateOverlayCtx.strokeStyle = "rgba(224,248,207,0.35)";
+  validateOverlayCtx.lineWidth = 1;
+  for (let x = 0; x <= analysis.tilesX; x++) {
+    validateOverlayCtx.beginPath();
+    validateOverlayCtx.moveTo(Math.round(x * tileW) + 0.5, 0);
+    validateOverlayCtx.lineTo(Math.round(x * tileW) + 0.5, h);
+    validateOverlayCtx.stroke();
+  }
+  for (let y = 0; y <= analysis.tilesY; y++) {
+    validateOverlayCtx.beginPath();
+    validateOverlayCtx.moveTo(0, Math.round(y * tileH) + 0.5);
+    validateOverlayCtx.lineTo(w, Math.round(y * tileH) + 0.5);
+    validateOverlayCtx.stroke();
+  }
+
+  if (state.validator.selectedTileKey) {
+    const positions = analysis.positionsByKey[state.validator.selectedTileKey] || [];
+    validateOverlayCtx.strokeStyle = "#00e4ff";
+    validateOverlayCtx.lineWidth = 2;
+    positions.forEach((idx) => {
+      const x = (idx % analysis.tilesX) * tileW;
+      const y = Math.floor(idx / analysis.tilesX) * tileH;
+      validateOverlayCtx.strokeRect(x + 1, y + 1, tileW - 2, tileH - 2);
+    });
+  }
+}
+
+function renderValidatorSummary() {
+  const analysis = state.validator.analysis;
+  const normalized = state.validator.normalized;
+  if (!analysis || !normalized) return;
+
+  const rareRatio = analysis.uniqueTiles ? ((analysis.rareUniqueTiles / analysis.uniqueTiles) * 100).toFixed(1) : "0.0";
+  el.validateSummary.innerHTML = `
+    <h3>結果サマリー</h3>
+    <p>Status: <strong>${analysis.status}</strong></p>
+    <p>Source: ${normalized.srcWidth} x ${normalized.srcHeight}</p>
+    <p>Analyzed: ${analysis.analyzedWidth} x ${analysis.analyzedHeight}</p>
+    <p>Total tiles: ${analysis.totalTiles}</p>
+    <p>Colors used: ${analysis.uniqueColors} / 4 ${analysis.paletteOk ? "(OK)" : "(Palette NG)"}</p>
+    <p>Unique tiles: ${analysis.uniqueTiles} / ${analysis.tileLimit} ${analysis.tilesOk ? "(OK)" : "(Tiles OVER)"}</p>
+    <p>Rare unique tiles: ${analysis.rareUniqueTiles} (${rareRatio}%)</p>
+  `;
+}
+
+function renderTileList() {
+  const analysis = state.validator.analysis;
+  if (!analysis) return;
+  el.tileList.innerHTML = "";
+  const entries = Object.entries(analysis.freqByKey).sort((a, b) => a[1] - b[1]);
+
+  entries.forEach(([key, freq]) => {
+    const item = document.createElement("button");
+    item.className = "tile-item";
+    if (state.validator.selectedTileKey === key) item.classList.add("active");
+
+    const c = document.createElement("canvas");
+    c.width = 8;
+    c.height = 8;
+    c.getContext("2d").putImageData(imageDataFromTileKey(key, 8), 0, 0);
+
+    const info = document.createElement("small");
+    info.textContent = `freq:${freq}`;
+    item.append(c, info);
+    item.addEventListener("click", () => {
+      state.validator.selectedTileKey = key;
+      renderTileList();
+      drawValidatorOverlay();
+    });
+    el.tileList.appendChild(item);
+  });
+}
+
+async function downloadTileset() {
+  const analysis = state.validator.analysis;
+  if (!analysis) return;
+  const blob = await buildTilesetPng(analysis, { cols: 16, sort: "freqAsc", tileSize: 8 });
+  downloadBlob(blob, `tileset_${analysis.uniqueTiles}tiles.png`);
+}
+
+function downloadReportJsonFile() {
+  const analysis = state.validator.analysis;
+  const normalized = state.validator.normalized;
+  const file = state.validator.file;
+  if (!analysis || !normalized || !file) return;
+  const blob = buildReportJson(analysis, {
+    fileName: file.name,
+    mimeType: file.type,
+    srcWidth: normalized.srcWidth,
+    srcHeight: normalized.srcHeight,
+    settings: {
+      tileLimit: Number(el.tileLimit.value) || 192,
+      padOrCrop: el.multipleHandling.value,
+      transparencyMode: el.transparencyHandling.value,
+    },
+  });
+  downloadBlob(blob, `tile_report_${Date.now()}.json`);
+}
+
+function imageDataFromTileKey(base64, tileSize) {
+  const bin = atob(base64);
+  const arr = new Uint8ClampedArray(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new ImageData(arr, tileSize, tileSize);
 }
 
 function bindUploadHandlers() {

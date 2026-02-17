@@ -18,6 +18,24 @@ body {
 .app-header h1 { margin: 0; }
 .app-header p { margin-top: .25rem; color: var(--muted); }
 
+.tab-nav {
+  display: flex;
+  gap: .5rem;
+  justify-content: center;
+  padding: 0 1rem 1rem;
+}
+.tab-btn {
+  border: 1px solid #5f8b75;
+  background: #1e352b;
+  color: var(--text);
+  border-radius: 999px;
+  padding: .5rem 1rem;
+}
+.tab-btn.active { background: #3d6f57; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
 .layout {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
@@ -61,13 +79,25 @@ button {
 button.active { background: #3d6f57; }
 button:hover { filter: brightness(1.1); }
 
-#previewCanvas {
+#previewCanvas,
+#validatePreviewCanvas,
+#validateOverlayCanvas {
   width: 100%;
   max-height: 70vh;
   border: 1px solid #3b5f4d;
   border-radius: 8px;
   background: #071821;
   image-rendering: pixelated;
+}
+
+.preview-stack {
+  position: relative;
+}
+#validateOverlayCanvas {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
 }
 
 details { margin-bottom: .75rem; }
@@ -80,8 +110,41 @@ summary { cursor: pointer; font-weight: 700; }
 }
 label { display: flex; flex-direction: column; gap: .2rem; font-size: .9rem; }
 input, select { width: 100%; }
-.button-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: end; }
+.button-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: end; margin-top: .75rem; }
 #statusText { margin-left: auto; font-size: .85rem; color: var(--muted); }
+
+.result-card {
+  margin-top: .75rem;
+  border: 1px solid #446b58;
+  border-radius: 10px;
+  padding: .75rem;
+  background: #183024;
+}
+
+.tile-grid {
+  margin-top: .5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: .5rem;
+}
+.tile-item {
+  border: 1px solid #4b7461;
+  border-radius: 8px;
+  padding: .35rem;
+  text-align: center;
+  cursor: pointer;
+  background: #1b3328;
+}
+.tile-item.active {
+  outline: 2px solid #e0f8cf;
+}
+.tile-item canvas {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  border: 1px solid #365948;
+}
+.tile-item small { display: block; margin-top: .25rem; }
 
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
