@@ -46,6 +46,12 @@ const I18N = {
     snsScale: "SNS拡大倍率",
     downloadRaw: "GB Studio用PNG保存",
     downloadScaled: "SNS向け拡大PNG保存",
+    downloadGbpx: "GB Paint用JSONを書き出し",
+    gbpxHintNeedConvert: "160x144で変換後に有効になります",
+    gbpxHintReady: "GB Paint互換JSON（GBPX v1）を書き出せます",
+    statusNeed160x144: "GB Paint JSONは160x144出力でのみ書き出せます",
+    statusGbpxExported: "GB Paint用JSONを書き出しました",
+    statusInvalidIndices: "書き出し失敗: ピクセルインデックスに不正値があります",
     validateTitle: "最終PNG検証",
     uploadFinalPngAria: "最終PNGをアップロード",
     validatePurpose: "用途: GB Studio向け事前検証（色数・タイル数）",
@@ -123,6 +129,12 @@ const I18N = {
     snsScale: "SNS upscale",
     downloadRaw: "Save PNG for GB Studio",
     downloadScaled: "Save Upscaled PNG for SNS",
+    downloadGbpx: "Export JSON for GB Paint",
+    gbpxHintNeedConvert: "Enabled after converting at 160x144",
+    gbpxHintReady: "Ready to export GB Paint-compatible JSON (GBPX v1)",
+    statusNeed160x144: "GB Paint JSON export supports only 160x144 output",
+    statusGbpxExported: "Exported JSON for GB Paint",
+    statusInvalidIndices: "Export failed: invalid pixel indices were detected",
     validateTitle: "Final PNG Validation",
     uploadFinalPngAria: "Upload final PNG",
     validatePurpose: "Usage: Pre-check for GB Studio (colors/tile count)",
@@ -169,6 +181,7 @@ const state = {
   previewMode: "after",
   processing: false,
   pending: false,
+  outputIndices: null,
   language: localStorage.getItem("gbdc_lang") || "ja",
   lastStatusKey: "",
   validator: {
@@ -216,6 +229,8 @@ const el = {
   scalePreset: document.getElementById("scalePreset"),
   downloadRawBtn: document.getElementById("downloadRawBtn"),
   downloadScaledBtn: document.getElementById("downloadScaledBtn"),
+  downloadGbpxBtn: document.getElementById("downloadGbpxBtn"),
+  gbpxHint: document.getElementById("gbpxHint"),
   validateDropZone: document.getElementById("validateDropZone"),
   validateFileInput: document.getElementById("validateFileInput"),
   tileLimit: document.getElementById("tileLimit"),
@@ -550,7 +565,7 @@ function bindUploadHandlers() {
 
 function bindControls() {
   const debouncedProcess = debounce(processImagePipeline, DEBOUNCE_MS);
-  const instant = [el.showBeforeBtn, el.showAfterBtn, el.downloadRawBtn, el.downloadScaledBtn];
+  const instant = [el.showBeforeBtn, el.showAfterBtn, el.downloadRawBtn, el.downloadScaledBtn, el.downloadGbpxBtn];
 
   instant.forEach((node) => node.addEventListener("click", onActionButton));
 
@@ -588,6 +603,8 @@ function onActionButton(ev) {
     downloadRaw();
   } else if (ev.currentTarget === el.downloadScaledBtn) {
     downloadScaled();
+  } else if (ev.currentTarget === el.downloadGbpxBtn) {
+    downloadGbpx();
   }
 }
 
@@ -673,6 +690,8 @@ function processImagePipeline() {
       enforcePaletteSafety(imageData);
       wctx.putImageData(imageData, 0, 0);
 
+      state.outputIndices = imageDataToPaletteIndices(imageData);
+
       state.outputCanvas.width = outW;
       state.outputCanvas.height = outH;
       const octx = state.outputCanvas.getContext("2d");
@@ -680,9 +699,12 @@ function processImagePipeline() {
       octx.drawImage(workCanvas, 0, 0);
 
       updateStatusByKey("statusDone", false, ` ${outW}x${outH}`);
+      updateGbpxExportState();
       drawPreview();
     } catch (error) {
       console.error(error);
+      state.outputIndices = null;
+      updateGbpxExportState();
       updateStatusByKey("statusProcessFailed", true);
     } finally {
       state.processing = false;
@@ -961,7 +983,123 @@ function updateReadouts() {
   el.ditherStrengthValue.textContent = el.ditherStrength.value;
 }
 
+
+function updateGbpxExportState() {
+  const ready = Boolean(
+    state.outputCanvas.width === 160
+    && state.outputCanvas.height === 144
+    && state.outputIndices
+    && state.outputIndices.length === 160 * 144
+  );
+  el.downloadGbpxBtn.disabled = !ready;
+  el.gbpxHint.textContent = ready ? t("gbpxHintReady") : t("gbpxHintNeedConvert");
+}
+
+function imageDataToPaletteIndices(imageData) {
+  const { data, width, height } = imageData;
+  const indices = new Uint8Array(width * height);
+
+  for (let i = 0, px = 0; i < data.length; i += 4, px++) {
+    const idx = findPaletteIndex(data[i], data[i + 1], data[i + 2]);
+    indices[px] = idx;
+  }
+
+  return indices;
+}
+
+function findPaletteIndex(r, g, b) {
+  for (let i = 0; i < GB_PALETTE.length; i++) {
+    const c = GB_PALETTE[i];
+    if (c[0] === r && c[1] === g && c[2] === b) return i;
+  }
+  return nearestPaletteIndex(r, g, b);
+}
+
+function nearestPaletteIndex(r, g, b) {
+  let minD = Infinity;
+  let bestIndex = 0;
+
+  for (let i = 0; i < GB_PALETTE.length; i++) {
+    const p = GB_PALETTE[i];
+    const d = (r - p[0]) ** 2 + (g - p[1]) ** 2 + (b - p[2]) ** 2;
+    if (d < minD) {
+      minD = d;
+      bestIndex = i;
+    }
+  }
+
+  return bestIndex;
+}
+
+function uint8ToBase64(u8) {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < u8.length; i += chunk) {
+    binary += String.fromCharCode(...u8.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+function validateIndicesForGbpx(indices) {
+  if (!(indices instanceof Uint8Array)) return false;
+  if (indices.length !== 160 * 144) return false;
+
+  for (let i = 0; i < indices.length; i++) {
+    const v = indices[i];
+    if (v < 0 || v > 3) return false;
+  }
+
+  return true;
+}
+
+function buildGbpxJson() {
+  if (state.outputCanvas.width !== 160 || state.outputCanvas.height !== 144) {
+    updateStatusByKey("statusNeed160x144", true);
+    return null;
+  }
+
+  const indices = state.outputIndices;
+  if (!validateIndicesForGbpx(indices)) {
+    updateStatusByKey("statusInvalidIndices", true);
+    return null;
+  }
+
+  return {
+    version: 1,
+    w: 160,
+    h: 144,
+    palette: [...GB_PALETTE_HEX],
+    bgIndex: 3,
+    pixels: uint8ToBase64(indices),
+    meta: {
+      sourceApp: "gb-converter",
+      createdAt: new Date().toISOString(),
+      params: {
+        resizeMode: el.sizePreset.value,
+        gamma: Number(el.gamma.value),
+        contrast: Number(el.contrast.value),
+        dither: false,
+      },
+    },
+  };
+}
+
+function timestampForFileName(date = new Date()) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+}
+
+function downloadGbpx() {
+  const payload = buildGbpxJson();
+  if (!payload) return;
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  downloadBlob(blob, `gbpx-160x144-${timestampForFileName()}.json`);
+  updateStatusByKey("statusGbpxExported");
+}
+
 function renderPlaceHolder() {
+  updateGbpxExportState();
   el.previewCanvas.width = 320;
   el.previewCanvas.height = 288;
   previewCtx.fillStyle = "#071821";
